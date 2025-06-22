@@ -1,0 +1,17 @@
+[project]
+name = "utgenerator"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = "==3.11.*"
+dependencies = [
+    "datasets>=3.6.0",
+    "dotenv>=0.9.9",
+    "levenshtein>=0.27.1",
+    "libcst>=1.8.2",
+    "openai>=1.90.0",
+    "pre-commit>=4.2.0",
+    "python-dotenv>=1.1.0",
+    "swebench>=4.0.3",
+    "tiktoken>=0.9.0",
+]

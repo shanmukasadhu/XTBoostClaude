@@ -1,0 +1,23 @@
+{
+    "dataset_split": "verified",
+    "dataset_slice": ":2",
+    "output_folder": "results/test_localization",
+    "output_file": "results/test_localization/loc_outputs.jsonl",
+    "start_file": null,
+    "file_level": true,
+    "related_level": true,
+    "fine_grain_line_level": true,
+    "top_n": 3,
+    "temperature": 1.0,
+    "num_samples": 4,
+    "compress": true,
+    "merge": false,
+    "add_space": false,
+    "no_line_number": false,
+    "sticky_scroll": false,
+    "context_window": 10,
+    "target_id": null,
+    "mock": false,
+    "model": "o3",
+    "backend": "openai"
+}
