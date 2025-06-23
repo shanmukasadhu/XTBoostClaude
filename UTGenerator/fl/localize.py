@@ -192,7 +192,6 @@ def localize(args):
                 )
                 + "\n"
             )
-        break
 
 
 def merge(args):
@@ -222,7 +221,6 @@ def merge(args):
     # Pair wise merge
     for st_id in range(0, args.num_samples - 1, 2):
         en_id = st_id + 1
-        print(f"Merging sample {st_id} and {en_id}...")
         merged_locs = []
         for locs in start_file_locs:
             if "found_edit_locs" not in locs or len(locs["found_edit_locs"]) <= en_id:

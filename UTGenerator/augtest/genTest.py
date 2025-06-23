@@ -228,6 +228,8 @@ def repair(args):
             continue
 
         logging.info(f"================ repairing {instance_id} ================")
+        
+        print(loc["found_files"])
 
         if len(loc["found_files"]) == 0:
             with open(args.output_file, "a") as f:
