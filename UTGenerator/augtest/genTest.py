@@ -254,14 +254,55 @@ def repair(args):
         pred_files = loc["found_files"][: args.top_n]
 
         # grab buggy problem issue description and structure data
-        bench_data = [x for x in swe_bench_data if x["instance_id"] == instance_id][0]
-        problem_statement = bench_data["problem_statement"]
-        test_patch = bench_data["test_patch"]
-        added_imports = extract_added_imports(test_patch)
-        test_patch = extract_added_lines(bench_data["test_patch"]) # this is for removing the + sign to feed in the final prompt
-        structure = get_repo_structure(
-            instance_id, bench_data["repo"], bench_data["base_commit"], "playground"
-        )
+        try:
+            # Find the matching instance
+            matching_instances = [x for x in swe_bench_data if x["instance_id"] == instance_id]
+            if not matching_instances:
+                logging.error(f"Instance ID {instance_id} not found in the dataset")
+                with open(args.output_file, "a") as f:
+                    f.write(
+                        json.dumps(
+                            {
+                                "instance_id": instance_id,
+                                "raw_output": [""],
+                                "try_count": [0],
+                                "all_generations": [[]],
+                                "traj": [],
+                                "prev_content": [[]],
+                                "file_names": [[]],
+                            }
+                        )
+                        + "\n"
+                    )
+                continue
+                
+            bench_data = matching_instances[0]
+            problem_statement = bench_data["problem_statement"]
+            test_patch = bench_data["test_patch"]
+            added_imports = extract_added_imports(test_patch)
+            test_patch = extract_added_lines(bench_data["test_patch"]) # this is for removing the + sign to feed in the final prompt
+            structure = get_repo_structure(
+                instance_id, bench_data["repo"], bench_data["base_commit"], "playground"
+            )
+        except Exception as e:
+            logging.error(f"Error retrieving data for {instance_id}: {e}")
+            with open(args.output_file, "a") as f:
+                f.write(
+                    json.dumps(
+                        {
+                            "instance_id": instance_id,
+                            "raw_output": [""],
+                            "try_count": [0],
+                            "all_generations": [[]],
+                            "traj": [],
+                            "prev_content": [[]],
+                            "file_names": [[]],
+                        }
+                    )
+                    + "\n"
+                )
+            continue
+
         files, _, _ = get_full_file_paths_and_classes_and_functions(structure)
 
         raw_outputs, counts, all_generations, traj, prev_contents, file_names = (

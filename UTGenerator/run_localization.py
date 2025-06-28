@@ -8,10 +8,16 @@ from UTGenerator.fl.localize import merge, localize
 
 
 load_dotenv()
+# Load OpenAI API key
 api_key = os.getenv("OPENAI_API_KEY")
 if not api_key:
     raise ValueError("OPENAI_API_KEY not found in environment variables")
 os.environ['OPENAI_API_KEY'] = api_key
+
+# Load Anthropic API key (if exists)
+anthropic_api_key = os.getenv("ANTHROPIC_API_KEY")
+if anthropic_api_key:
+    os.environ['ANTHROPIC_API_KEY'] = anthropic_api_key
 
 def main():
     parser = argparse.ArgumentParser()
@@ -44,9 +50,25 @@ def main():
     parser.add_argument(
         "--model", type=str, default=os.getenv("OPENAI_MODEL_NAME")
     )
-    parser.add_argument("--backend", type=str, default="openai", choices=["openai"])
+    parser.add_argument("--backend", type=str, default="openai", choices=["openai", "anthropic"])
+    parser.add_argument("--system_message", type=str, default="You are a helpful assistant.",
+                        help="System message for the model, especially useful for Anthropic models")
 
     args = parser.parse_args()
+
+    # Validate backend selection
+    if args.backend == "anthropic":
+        if not anthropic_api_key:
+            raise ValueError("ANTHROPIC_API_KEY not found in environment variables but backend is set to 'anthropic'")
+        # If user hasn't specified a model, set default Claude model
+        if not args.model:
+            args.model = "claude-3-sonnet-20240229"
+            print(f"No model specified for Anthropic backend. Using default: {args.model}")
+        # If user specified o3 or other OpenAI model, convert to Claude model
+        elif args.model.startswith("o3") or args.model.startswith("gpt"):
+            old_model = args.model
+            args.model = "claude-3-sonnet-20240229"
+            print(f"Converting OpenAI model '{old_model}' to Claude model: {args.model}")
 
     args.output_file = os.path.join(args.output_folder, args.output_file)
 

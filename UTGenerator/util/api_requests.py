@@ -6,12 +6,14 @@ import openai
 import httpx
 import tiktoken
 import os
+import anthropic  # Import anthropic library
 
 from dotenv import load_dotenv
 
 
 load_dotenv()
 os.environ['OPENAI_API_KEY'] = os.getenv("OPENAI_API_KEY", "")
+os.environ['ANTHROPIC_API_KEY'] = os.getenv("ANTHROPIC_API_KEY", "")  
 
 def num_tokens_from_messages(message, model="o3"):
     """Returns the number of tokens used by a list of messages."""
@@ -95,7 +97,7 @@ def request_chatgpt_engine(config, base_url=None):
     print(f"[DEBUG] model: {model}")
     print(f"[DEBUG] is_chat_model: {is_chat_model}")
 
-    # 建立 client
+    # Create client
     if base_url:
         client = openai.OpenAI(
             api_key=api_key,
@@ -114,7 +116,7 @@ def request_chatgpt_engine(config, base_url=None):
             if is_chat_model:
                 ret = client.chat.completions.create(**config)
             else:
-                # o3 模型
+                # o3 model
                 ret = client.responses.create(
                     model=model,
                     input=config["messages"],
@@ -183,50 +185,121 @@ def print_response_output(response):
 
 
 def create_anthropic_config(
-    message: str,
-    prefill_message: str,
+    message: Union[str, list],
     max_tokens: int,
     temperature: float = 1,
     batch_size: int = 1,
     system_message: str = "You are a helpful assistant.",
-    model: str = "claude-2.1",
+    model: str = "claude-3-sonnet-20240229",
 ) -> Dict:
+    """
+    Create Anthropic API request configuration.
+    Supports Claude-3 series models: claude-3-opus-20240229, claude-3-sonnet-20240229, claude-3.5-sonnet-20240620, etc.
+    
+    Parameters:
+        message: User message content, can be a string or list of messages
+        max_tokens: Maximum number of tokens to generate
+        temperature: Temperature parameter, controls randomness of generation
+        batch_size: Number of samples to generate (current API doesn't support more than 1)
+        system_message: System message
+        model: Model name, default is claude-3-sonnet-20240229
+    
+    Returns:
+        Dict: API request configuration
+    """
+    # Validate model name
+    valid_models = [
+        "claude-3-opus-20240229", 
+        "claude-3-sonnet-20240229", 
+        "claude-3-haiku-20240307",
+        "claude-3.5-sonnet-20240620"
+    ]
+    
+    if model not in valid_models and not model.startswith("claude-"):
+        print(f"Warning: Potentially unsupported model '{model}'. Recommended to use one of these models: {', '.join(valid_models)}")
+        print(f"Continuing with the provided model: {model}")
+
     if isinstance(message, list):
         config = {
             "model": model,
-            "temperature": temperature,
             "max_tokens": max_tokens,
+            "temperature": temperature,
             "system": system_message,
             "messages": message,
         }
     else:
         config = {
             "model": model,
-            "temperature": temperature,
             "max_tokens": max_tokens,
+            "temperature": temperature,
             "system": system_message,
             "messages": [
-                {"role": "user", "content": message},
-                {"role": "assistant", "content": prefill_message},
+                {"role": "user", "content": message}
             ],
         }
     return config
 
 
-def request_anthropic_engine(client, config):
+def request_anthropic_engine(config):
+    """
+    Send request to Anthropic API
+    
+    Parameters:
+        config: API request configuration
+    
+    Returns:
+        tuple: (generated text, usage statistics)
+    """
+    # Create Anthropic client
+    client = anthropic.Anthropic(
+        api_key=os.environ.get("ANTHROPIC_API_KEY"),
+    )
+    
     ret = None
-    while ret is None:
+    max_retries = 5
+    retry_count = 0
+    
+    while ret is None and retry_count < max_retries:
         try:
             signal.signal(signal.SIGALRM, handler)
             signal.alarm(100)
+            
             ret = client.messages.create(**config)
+            
             signal.alarm(0)
+        except anthropic.APIError as e:
+            print(f"Anthropic API error: {e}")
+            retry_count += 1
+            if retry_count < max_retries:
+                wait_time = 2 ** retry_count  # Exponential backoff
+                print(f"Waiting {wait_time} seconds before retrying... (attempt {retry_count}/{max_retries})")
+                signal.alarm(0)
+                time.sleep(wait_time)
+            else:
+                print("Maximum retry count reached, giving up request")
+                raise
         except Exception as e:
-            print("Unknown error. Waiting...")
-            print(e)
-            signal.alarm(0)
-            time.sleep(10)
-    return ret
+            print(f"Unknown error: {e}")
+            retry_count += 1
+            if retry_count < max_retries:
+                wait_time = 2 ** retry_count
+                print(f"Waiting {wait_time} seconds before retrying... (attempt {retry_count}/{max_retries})")
+                signal.alarm(0)
+                time.sleep(wait_time)
+            else:
+                print("Maximum retry count reached, giving up request")
+                raise
+    
+    # Extract generated text
+    response_text = ret.content[0].text if ret and ret.content else ""
+    
+    # Token usage statistics
+    usage = {
+        "input_tokens": ret.usage.input_tokens if ret and hasattr(ret, "usage") else 0,
+        "output_tokens": ret.usage.output_tokens if ret and hasattr(ret, "usage") else 0
+    }
+    
+    return response_text, usage
 
 
 def read_python_file(file_path):
@@ -448,3 +521,51 @@ def read_python_file(file_path):
 #             if f.endswith(".py"):
 #                 file_paths.append(os.path.join(root, f))
 #     return file_paths
+
+def call_claude_model(
+    prompt: str,
+    model: str = "claude-3-sonnet-20240229",
+    system_message: str = "You are a helpful assistant.",
+    max_tokens: int = 1000,
+    temperature: float = 1.0
+):
+    """
+    Convenient function to generate responses using Claude-3 model
+    
+    Parameters:
+        prompt: User message content
+        model: Model name, default is claude-3-sonnet-20240229
+        system_message: System message
+        max_tokens: Maximum number of tokens to generate
+        temperature: Temperature parameter, controls randomness of generation
+    
+    Returns:
+        str: Generated response text
+    """
+    config = create_anthropic_config(
+        message=prompt,
+        max_tokens=max_tokens,
+        temperature=temperature,
+        system_message=system_message,
+        model=model
+    )
+    
+    response, _ = request_anthropic_engine(config)
+    return response
+
+
+# Usage example
+if __name__ == "__main__":
+    # Test Claude API
+    prompt = "Please explain what decorators are in Python and provide a simple example."
+    
+    # Using the convenience function
+    response = call_claude_model(
+        prompt=prompt,
+        model="claude-3-sonnet-20240229",
+        system_message="You are a professional Python tutorial writer who answers questions clearly and concisely.",
+        max_tokens=800,
+        temperature=0.7
+    )
+    
+    print(f"Claude response:\n{response}")

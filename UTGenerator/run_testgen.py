@@ -1,7 +1,22 @@
 import os
 import argparse
+from dotenv import load_dotenv
 
 from UTGenerator.augtest.genTest import repair, post_process_repair
+
+# Load environment variables
+load_dotenv()
+
+# Load OpenAI API key
+api_key = os.getenv("OPENAI_API_KEY")
+if not api_key:
+    raise ValueError("OPENAI_API_KEY not found in environment variables")
+os.environ['OPENAI_API_KEY'] = api_key
+
+# Load Anthropic API key (if exists)
+anthropic_api_key = os.getenv("ANTHROPIC_API_KEY")
+if anthropic_api_key:
+    os.environ['ANTHROPIC_API_KEY'] = anthropic_api_key
 
 def main():
     parser = argparse.ArgumentParser()
@@ -28,7 +43,9 @@ def main():
         "--model", type=str, default="o3"
     )
 
-    parser.add_argument("--backend", type=str, default="openai", choices=["openai"])
+    parser.add_argument("--backend", type=str, default="openai", choices=["openai", "anthropic"])
+    parser.add_argument("--system_message", type=str, default="You are a helpful assistant.",
+                        help="System message for the model, especially useful for Anthropic models")
     parser.add_argument("--output_folder", type=str, required=True)
     parser.add_argument(
         "--only_correct", action="store_true"
@@ -56,6 +73,20 @@ def main():
     )
 
     args = parser.parse_args()
+
+    # Validate backend selection
+    if args.backend == "anthropic":
+        if not anthropic_api_key:
+            raise ValueError("ANTHROPIC_API_KEY not found in environment variables but backend is set to 'anthropic'")
+        # If user hasn't specified a model, set default Claude model
+        if not args.model or args.model == "o3":
+            args.model = "claude-3-sonnet-20240229"
+            print(f"No model specified for Anthropic backend. Using default: {args.model}")
+        # If user specified other OpenAI models, convert to Claude model
+        elif args.model.startswith("o3") or args.model.startswith("gpt"):
+            old_model = args.model
+            args.model = "claude-3-sonnet-20240229"
+            print(f"Converting OpenAI model '{old_model}' to Claude model: {args.model}")
 
     if not os.path.exists(args.output_folder):
         os.makedirs(args.output_folder)

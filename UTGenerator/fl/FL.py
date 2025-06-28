@@ -229,6 +229,7 @@ Wrap the response in triple backticks. Do not include any explanation.
             max_tokens=self.max_tokens,
             temperature=0,
             batch_size=1,
+            system_message="You are a code analysis expert, skilled at locating and analyzing problems in code."
         )
         traj = model.codegen(message, num_samples=1)[0]
         traj["prompt"] = message
@@ -318,6 +319,7 @@ Wrap the response in triple backticks. Do not include any explanation.
             max_tokens=self.max_tokens,
             temperature=0,
             batch_size=1,
+            system_message="You are a code analysis expert, skilled at locating and analyzing problems in code."
         )
         traj = model.codegen(message, num_samples=1)[0]
         traj["prompt"] = message
@@ -379,6 +381,7 @@ Wrap the response in triple backticks. Do not include any explanation.
             max_tokens=self.max_tokens,
             temperature=0,
             batch_size=1,
+            system_message="You are a code analysis expert, skilled at locating and analyzing problems in code."
         )
         traj = model.codegen(message, num_samples=1)[0]
         traj["prompt"] = message
@@ -457,6 +460,7 @@ Wrap the response in triple backticks. Do not include any explanation.
             max_tokens=self.max_tokens,
             temperature=temperature,
             batch_size=num_samples,
+            system_message="You are a code analysis expert, skilled at locating and analyzing problems in code."
         )
         raw_trajs = model.codegen(message, num_samples=num_samples)
 

@@ -8,6 +8,8 @@ import uuid
 import pandas as pd
 from tqdm import tqdm
 
+LOCAL_REPO_CACHE = os.environ.get("LOCAL_REPO_CACHE", "repo_cache")
+
 repo_to_top_folder = {
     "django/django": "django",
     "sphinx-doc/sphinx": "sphinx",
@@ -83,7 +85,16 @@ def clone_repo(repo_name, repo_playground):
 def get_file_content_from_scratch(
     repo_name, commit_id, instance_id, repo_playground, target_file=None
 ):
-
+    # Check local cache
+    cache_dir = os.path.join(LOCAL_REPO_CACHE, repo_name.replace("/", "_"), commit_id)
+    cache_file_path = os.path.join(cache_dir, target_file) if target_file else None
+    
+    if cache_file_path and os.path.exists(cache_file_path):
+        print(f"Loading file content from cache: {cache_file_path}")
+        with open(cache_file_path, 'r') as f:
+            return f.read()
+    
+    # Cache doesn't exist, fetch from GitHub
     # Generate a temperary folder and add uuid to avoid collision
     repo_playground = os.path.join(repo_playground, str(uuid.uuid4()))
 
@@ -96,16 +107,20 @@ def get_file_content_from_scratch(
     clone_repo(repo_name, repo_playground)
     checkout_commit(f"{repo_playground}/{repo_to_top_folder[repo_name]}", commit_id)
     file_content = get_file_content(f"{repo_playground}/{repo_to_top_folder[repo_name]}", target_file=target_file)
+    
+    # Save to cache
+    if target_file and file_content:
+        if not os.path.exists(os.path.dirname(cache_file_path)):
+            os.makedirs(os.path.dirname(cache_file_path), exist_ok=True)
+        with open(cache_file_path, 'w') as f:
+            f.write(file_content)
+        print(f"Cached file content to: {cache_file_path}")
+    
     # clean up
     subprocess.run(
         ["rm", "-rf", f"{repo_playground}/{repo_to_top_folder[repo_name]}"], check=True
     )
-    # d = {
-    #     "repo": repo_name,
-    #     "base_commit": commit_id,
-    #     "structure": structure,
-    #     "instance_id": instance_id,
-    # }
+    
     return file_content
 
 
@@ -113,7 +128,16 @@ def get_file_content_from_scratch(
 def get_project_structure_from_scratch(
     repo_name, commit_id, instance_id, repo_playground
 ):
-
+    # Check local cache
+    cache_dir = os.path.join(LOCAL_REPO_CACHE, repo_name.replace("/", "_"))
+    cache_file = os.path.join(cache_dir, f"{commit_id}.json")
+    
+    if os.path.exists(cache_file):
+        print(f"Loading project structure from cache: {cache_file}")
+        with open(cache_file, 'r') as f:
+            return json.load(f)
+    
+    # Cache doesn't exist, fetch from GitHub
     # Generate a temperary folder and add uuid to avoid collision
     repo_playground = os.path.join(repo_playground, str(uuid.uuid4()))
 
@@ -136,6 +160,14 @@ def get_project_structure_from_scratch(
         "structure": structure,
         "instance_id": instance_id,
     }
+    
+    # Save to cache
+    if not os.path.exists(cache_dir):
+        os.makedirs(cache_dir, exist_ok=True)
+    with open(cache_file, 'w') as f:
+        json.dump(d, f)
+    print(f"Cached project structure to: {cache_file}")
+    
     return d
 
 

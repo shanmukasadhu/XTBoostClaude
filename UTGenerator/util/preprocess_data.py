@@ -621,6 +621,8 @@ def get_full_file_paths_and_classes_and_functions(structure, current_path=""):
 
 PROJECT_FILE_LOC = os.environ.get("PROJECT_FILE_LOC", None)
 
+LOCAL_REPO_CACHE = os.environ.get("LOCAL_REPO_CACHE", "repo_cache")
+
 
 def get_repo_structure(instance_id: str, repo_name, base_commit, playground):
 
@@ -629,10 +631,25 @@ def get_repo_structure(instance_id: str, repo_name, base_commit, playground):
             d = json.load(f)
         repo_structure = d["structure"]
     else:
-        d = get_project_structure_from_scratch(
-            repo_name, base_commit, instance_id, playground
-        )
-        repo_structure = d["structure"]
+        cache_dir = os.path.join(LOCAL_REPO_CACHE, repo_name.replace("/", "_"))
+        cache_file = os.path.join(cache_dir, f"{base_commit}.json")
+        
+        if os.path.exists(cache_file):
+            print(f"Loading repository structure from cache: {cache_file}")
+            with open(cache_file, 'r') as f:
+                d = json.load(f)
+            repo_structure = d["structure"]
+        else:
+            d = get_project_structure_from_scratch(
+                repo_name, base_commit, instance_id, playground
+            )
+            repo_structure = d["structure"]
+            
+            if not os.path.exists(cache_dir):
+                os.makedirs(cache_dir, exist_ok=True)
+            with open(cache_file, 'w') as f:
+                json.dump(d, f)
+            print(f"Cached repository structure to: {cache_file}")
 
     return repo_structure
 
