@@ -36,7 +36,32 @@
         --start_file results/test_localization/loc_outputs.jsonl \
         --num_samples 4
     ```
-2. test case generation script:
+    ### Running with Claude Model (Anthropic backend)
+
+    To run test generation with Claude (e.g., `claude-sonnet-4-20250514`), add the `--model` and `--backend` flags:
+    
+    ```bash
+    uv run python -m UTGenerator.run_localization \
+      --dataset_split verified \
+      --dataset_slice :200 \
+      --output_folder results/test_localization_sonnet4 \
+      --file_level \
+      --related_level \
+      --fine_grain_line_level \
+      --top_n 3 \
+      --compress \
+      --context_window 10 \
+      --temperature 1 \
+      --num_samples 1 \
+      --model claude-sonnet-4-20250514 \
+      --backend anthropic
+    ```
+    --Ensure you have the anthropic Python package installed:
+    ```bash
+    uv pip install anthropic
+    ```
+
+3. test case generation script:
     ```
     uv run python -m UTGenerator.run_testgen \
         --loc_file results/test_merge/loc_merged_0-1_outputs.jsonl \
@@ -45,3 +70,4 @@
         --max_samples 2  --cot --diff_format \
         --gen_and_process 
     ```
+    
