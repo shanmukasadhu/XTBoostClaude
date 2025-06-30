@@ -36,15 +36,24 @@
         --start_file results/test_localization/loc_outputs.jsonl \
         --num_samples 4
     ```
-    ### Running with Claude Model (Anthropic backend)
 
-    To run test generation with Claude (e.g., `claude-sonnet-4-20250514`), add the `--model` and `--backend` flags:
-    
+3. test case generation script:
+    ```bash
+    uv run python -m UTGenerator.run_testgen \
+        --loc_file results/test_merge/loc_merged_0-1_outputs.jsonl \
+        --output_folder results/test_gen/new_gen_testCase_t099_lm01 \
+        --loc_interval --top_n=3 --context_window=10 \
+        --max_samples 2  --cot --diff_format \
+        --gen_and_process 
+    ```
+
+## End-to-End Pipeline with Verified Dataset (Claude Backend)
+1. Localization – Verified Dataset
     ```bash
     uv run python -m UTGenerator.run_localization \
       --dataset_split verified \
-      --dataset_slice :200 \
-      --output_folder results/test_localization_sonnet4 \
+      --dataset_slice :20 \
+      --output_folder results/test_localization_verified \
       --file_level \
       --related_level \
       --fine_grain_line_level \
@@ -56,18 +65,29 @@
       --model claude-sonnet-4-20250514 \
       --backend anthropic
     ```
-    --Ensure you have the anthropic Python package installed:
+2. Merge – Verified Dataset
     ```bash
-    uv pip install anthropic
+    uv run python -m UTGenerator.run_localization \
+      --dataset_split verified \
+      --merge \
+      --output_folder results/test_merge_verified \
+      --start_file results/test_localization_verified/loc_outputs.jsonl \
+      --num_samples 4
     ```
-
-3. test case generation script:
-    ```
+3. Test Generation – Verified Dataset
+    ```bash
     uv run python -m UTGenerator.run_testgen \
-        --loc_file results/test_merge/loc_merged_0-1_outputs.jsonl \
-        --output_folder results/test_gen/new_gen_testCase_t099_lm01 \
-        --loc_interval --top_n=3 --context_window=10 \
-        --max_samples 2  --cot --diff_format \
-        --gen_and_process 
+      --split verified \
+      --loc_file results/test_merge_verified/loc_merged_0-1_outputs.jsonl \
+      --output_folder results/test_gen_verified \
+      --loc_interval \
+      --top_n=3 \
+      --context_window=10 \
+      --max_samples 2 \
+      --cot \
+      --diff_format \
+      --gen_and_process \
+      --model claude-sonnet-4-20250514 \
+      --backend anthropic \
+      --max_tokens 4096
     ```
-    
