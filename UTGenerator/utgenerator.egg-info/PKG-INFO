@@ -1,0 +1,16 @@
+Metadata-Version: 2.4
+Name: utgenerator
+Version: 0.1.0
+Summary: Add your description here
+Requires-Python: ==3.11.*
+Description-Content-Type: text/markdown
+Requires-Dist: datasets>=3.6.0
+Requires-Dist: dotenv>=0.9.9
+Requires-Dist: levenshtein>=0.27.1
+Requires-Dist: libcst>=1.8.2
+Requires-Dist: openai>=1.90.0
+Requires-Dist: pre-commit>=4.2.0
+Requires-Dist: python-dotenv>=1.1.0
+Requires-Dist: swebench>=4.0.3
+Requires-Dist: tiktoken>=0.9.0
+Requires-Dist: anthropic

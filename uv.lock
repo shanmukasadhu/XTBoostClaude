@@ -106,6 +106,24 @@ wheels = [
 ]
 
 [[package]]
+name = "anthropic"
+version = "0.59.0"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "anyio" },
+    { name = "distro" },
+    { name = "httpx" },
+    { name = "jiter" },
+    { name = "pydantic" },
+    { name = "sniffio" },
+    { name = "typing-extensions" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/fe/cf/52daff015f5a1f24eec891b3041f5f816712fea8b5113dc76638bcbc23d8/anthropic-0.59.0.tar.gz", hash = "sha256:d710d1ef0547ebbb64b03f219e44ba078e83fc83752b96a9b22e9726b523fd8f", size = 425679, upload-time = "2025-07-23T16:23:16.901Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/3c/b1/03f680393eac04afd8f2be44ee0e39e033c40faf43dbc1c11764b07a2687/anthropic-0.59.0-py3-none-any.whl", hash = "sha256:cbc8b3dccef66ad6435c4fa1d317e5ebb092399a4b88b33a09dc4bf3944c3183", size = 293057, upload-time = "2025-07-23T16:23:14.934Z" },
+]
+
+[[package]]
 name = "anyio"
 version = "4.9.0"
 source = { registry = "https://pypi.org/simple" }
@@ -1773,8 +1791,9 @@ wheels = [
 [[package]]
 name = "utgenerator"
 version = "0.1.0"
-source = { virtual = "UTGenerator" }
+source = { directory = "UTGenerator" }
 dependencies = [
+    { name = "anthropic" },
     { name = "datasets" },
     { name = "dotenv" },
     { name = "levenshtein" },
@@ -1788,6 +1807,7 @@ dependencies = [
 
 [package.metadata]
 requires-dist = [
+    { name = "anthropic" },
     { name = "datasets", specifier = ">=3.6.0" },
     { name = "dotenv", specifier = ">=0.9.9" },
     { name = "levenshtein", specifier = ">=0.27.1" },
@@ -1906,7 +1926,7 @@ dependencies = [
 ]
 
 [package.metadata]
-requires-dist = [{ name = "utgenerator", virtual = "UTGenerator" }]
+requires-dist = [{ name = "utgenerator", directory = "UTGenerator" }]
 
 [[package]]
 name = "xxhash"
